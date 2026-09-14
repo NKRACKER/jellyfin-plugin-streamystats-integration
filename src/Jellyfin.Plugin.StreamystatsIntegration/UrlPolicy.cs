@@ -18,7 +18,7 @@ public static class UrlPolicy
     public static string NormalizeHealthUrl(string value)
     {
         var uri = Parse(value, nameof(value));
-        if (uri.Scheme is not (Uri.UriSchemeHttp or Uri.UriSchemeHttps))
+        if (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps)
         {
             throw new ArgumentException("The health URL must use HTTP or HTTPS.", nameof(value));
         }
