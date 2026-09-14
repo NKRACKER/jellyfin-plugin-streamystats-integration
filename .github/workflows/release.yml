@@ -101,6 +101,7 @@ jobs:
           RELEASE_TAG: ${{ needs.build.outputs.tag }}
         run: |
           pipx install jprm==1.1.0
+          gh release view "$RELEASE_TAG" >/dev/null 2>&1 || gh release create "$RELEASE_TAG" --title "$RELEASE_TAG" --notes ""
           for archive in artifacts/*.zip; do
             gh release upload "$RELEASE_TAG" "$archive" --clobber
             url="https://github.com/${GITHUB_REPOSITORY}/releases/download/${RELEASE_TAG}/$(basename "$archive")"
