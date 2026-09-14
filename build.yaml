@@ -1,0 +1,21 @@
+---
+name: "Streamystats Integration"
+guid: "5f71ee42-35b3-4a77-a3d5-2cb529ba1220"
+version: "1.0.0.0"
+targetAbi: "12.0.0.0"
+framework: "net10.0"
+owner: "REPLACE_WITH_GITHUB_OWNER"
+overview: "Embeds Streamystats as a responsive Jellyfin 12 Web view."
+description: >
+  Jellyfin 12 integration with dashboard setup, per-user visibility,
+  health checks, secure session switching and reverse-proxy guidance.
+category: "General"
+artifacts:
+  - "Jellyfin.Plugin.StreamystatsIntegration.dll"
+changelog: |-
+  Initial Jellyfin 12 release.
+
+  - Guided setup directly in the Jellyfin dashboard.
+  - Modern and Legacy Web navigation with responsive embedded Streamystats.
+  - Per-user visibility and fail-closed Streamystats session switching.
+  - Nginx, Nginx Proxy Manager, Caddy and Traefik guidance.

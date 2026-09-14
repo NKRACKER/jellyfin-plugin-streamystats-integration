@@ -1,0 +1,5 @@
+<Project>
+  <PropertyGroup Condition="'$(Version)' == ''">
+    <Version>$([System.Text.RegularExpressions.Regex]::Match($([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)build.yaml')), 'version:\s*&quot;([^&quot;]+)&quot;').Groups.get_Item(1).Value)</Version>
+  </PropertyGroup>
+</Project>

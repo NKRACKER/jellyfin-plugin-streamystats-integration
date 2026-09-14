@@ -1,0 +1,11 @@
+{
+  "name": "jellyfin-streamystats-integration",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "check:client": "node --check src/Jellyfin.Plugin.StreamystatsIntegration/Web/integration.js",
+    "test:client": "node tests/client/integration.test.mjs && node tests/client/config-page.test.mjs",
+    "test:repository": "node tests/repository/repository.test.mjs",
+    "test": "npm run check:client && npm run test:client && npm run test:repository"
+  }
+}

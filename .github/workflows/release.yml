@@ -1,0 +1,119 @@
+name: release-plugin-repository
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Existing release tag, for example v1.0.0.0"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: streamystats-plugin-release
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.release.outputs.tag }}
+    steps:
+      - name: Resolve release tag
+        id: release
+        env:
+          EVENT_TAG: ${{ github.event.release.tag_name }}
+          MANUAL_TAG: ${{ inputs.release_tag }}
+        run: |
+          tag="${EVENT_TAG:-$MANUAL_TAG}"
+          test -n "$tag"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ steps.release.outputs.tag }}
+
+      - name: Verify tag, version and Jellyfin 12 metadata
+        env:
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          version="$(sed -n 's/^version: "\([^"]*\)"/\1/p' build.yaml)"
+          test "${RELEASE_TAG#v}" = "$version"
+          grep -qx 'targetAbi: "12.0.0.0"' build.yaml
+          grep -qx 'framework: "net10.0"' build.yaml
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Test
+        run: |
+          npm test
+          dotnet test Jellyfin.Plugin.StreamystatsIntegration.sln --configuration Release
+
+      - name: Set catalog owner and package with JPRM
+        env:
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
+        run: |
+          sed -i "s|^owner:.*|owner: \"${REPOSITORY_OWNER}\"|" build.yaml
+          pipx install jprm==1.1.0
+          mkdir -p artifacts
+          jprm plugin build . --output=./artifacts
+
+      - name: Validate repository package
+        run: |
+          shopt -s nullglob
+          archives=(artifacts/*.zip)
+          test "${#archives[@]}" -eq 1
+          unzip -l "${archives[0]}" | grep -q 'Jellyfin.Plugin.StreamystatsIntegration.dll'
+          unzip -l "${archives[0]}" | grep -q 'meta.json'
+          ! unzip -l "${archives[0]}" | grep -Eq 'Jellyfin\.(Controller|Model)\.dll'
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: jellyfin-12-plugin-package
+          path: artifacts/*.zip
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - uses: actions/download-artifact@v8
+        with:
+          name: jellyfin-12-plugin-package
+          path: artifacts
+
+      - name: Upload ZIP and update Jellyfin manifest
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.build.outputs.tag }}
+        run: |
+          pipx install jprm==1.1.0
+          for archive in artifacts/*.zip; do
+            gh release upload "$RELEASE_TAG" "$archive" --clobber
+            url="https://github.com/${GITHUB_REPOSITORY}/releases/download/${RELEASE_TAG}/$(basename "$archive")"
+            jprm repo add --plugin-url "$url" ./manifest.json "$archive"
+          done
+
+      - name: Validate and publish manifest
+        env:
+          RELEASE_TAG: ${{ needs.build.outputs.tag }}
+        run: |
+          python3 -m json.tool manifest.json >/dev/null
+          grep -q '"targetAbi": "12.0.0.0"' manifest.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add manifest.json
+          git diff --cached --quiet || git commit -m "Publish Jellyfin plugin manifest for ${RELEASE_TAG}"
+          git push origin HEAD:main

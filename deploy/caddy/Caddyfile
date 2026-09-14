@@ -1,0 +1,39 @@
+media.example.com {
+    reverse_proxy jellyfin:8096
+}
+
+stats.media.example.com {
+    @approved_reset {
+        path /__jellyfin_integration_reset
+        method POST
+        header Origin https://media.example.com
+    }
+    handle @approved_reset {
+        header {
+            +Set-Cookie "streamystats-session=; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Lax"
+            +Set-Cookie "streamystats-token=; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Lax"
+            Access-Control-Allow-Origin "https://media.example.com"
+            Access-Control-Allow-Credentials "true"
+            Access-Control-Expose-Headers "X-SSI-Session-Reset"
+            Vary "Origin"
+            X-SSI-Session-Reset "1"
+            Cache-Control "no-store"
+        }
+        respond "" 204
+    }
+
+    handle /__jellyfin_integration_reset {
+        respond "Forbidden" 403
+    }
+
+    handle {
+        reverse_proxy streamystats:3000 {
+            header_down -X-Frame-Options
+            # Add a separate restrictive CSP. If Streamystats later starts sending
+            # a conflicting frame-ancestors policy, embedding fails safely.
+            header_down +Content-Security-Policy "frame-ancestors 'self' https://media.example.com"
+            header_down X-Content-Type-Options nosniff
+            header_down Referrer-Policy strict-origin-when-cross-origin
+        }
+    }
+}

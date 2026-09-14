@@ -1,0 +1,23 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - run: npm test
+      - run: dotnet test tests/plugin/Jellyfin.Plugin.StreamystatsIntegration.Tests.csproj --configuration Release
+      - run: dotnet build src/Jellyfin.Plugin.StreamystatsIntegration/Jellyfin.Plugin.StreamystatsIntegration.csproj --configuration Release

@@ -1,0 +1,36 @@
+services:
+  jellyfin:
+    image: jellyfin/jellyfin:12.0
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.jellyfin.rule=Host(`media.example.com`)
+      - traefik.http.routers.jellyfin.entrypoints=websecure
+      - traefik.http.routers.jellyfin.tls=true
+      - traefik.http.services.jellyfin.loadbalancer.server.port=8096
+
+  streamystats:
+    image: ghcr.io/fredrikburmester/streamystats-nextjs:2.18.1
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.streamystats.rule=Host(`stats.media.example.com`)
+      - traefik.http.routers.streamystats.entrypoints=websecure
+      - traefik.http.routers.streamystats.tls=true
+      - traefik.http.routers.streamystats.middlewares=streamystats-frame@docker
+      - traefik.http.services.streamystats.loadbalancer.server.port=3000
+      # An empty custom response value removes the upstream XFO header.
+      - traefik.http.middlewares.streamystats-frame.headers.customresponseheaders.X-Frame-Options=
+      - traefik.http.middlewares.streamystats-frame.headers.contentsecuritypolicy=frame-ancestors 'self' https://media.example.com
+      - traefik.http.middlewares.streamystats-frame.headers.contenttypenosniff=true
+      - traefik.http.middlewares.streamystats-frame.headers.referrerpolicy=strict-origin-when-cross-origin
+
+  ssi-session-reset:
+    image: nginx:1.29-alpine
+    volumes:
+      - ../session-reset/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.ssi-session-reset.rule=Host(`stats.media.example.com`) && Path(`/__jellyfin_integration_reset`)
+      - traefik.http.routers.ssi-session-reset.priority=200
+      - traefik.http.routers.ssi-session-reset.entrypoints=websecure
+      - traefik.http.routers.ssi-session-reset.tls=true
+      - traefik.http.services.ssi-session-reset.loadbalancer.server.port=8080
