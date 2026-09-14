@@ -35,9 +35,8 @@ jobs:
 
       - uses: actions/checkout@v7
         with:
-          # Release events already provide the exact commit for the published tag.
-          # Manual runs use the explicitly supplied existing tag.
-          ref: ${{ github.event_name == 'release' && github.sha || steps.release.outputs.tag }}
+          # Always build from the commit that triggered this workflow run.
+          ref: ${{ github.sha }}
 
       - name: Verify tag, version and Jellyfin 12 metadata
         env:
