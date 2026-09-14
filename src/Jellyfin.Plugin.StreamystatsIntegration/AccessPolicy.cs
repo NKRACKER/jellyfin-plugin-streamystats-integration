@@ -12,6 +12,6 @@ internal static class AccessPolicy
         }
 
         return config.AllowAllUsers
-            || (config.AllowedUserIds ?? []).Contains(parsed.ToString("N"), StringComparer.OrdinalIgnoreCase);
+            || (config.AllowedUserIds ?? []).Any(id => Guid.TryParse(id, out var allowed) && allowed == parsed);
     }
 }
