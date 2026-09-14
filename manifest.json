@@ -1,1 +1,20 @@
-[]
+[
+    {
+        "guid": "5f71ee42-35b3-4a77-a3d5-2cb529ba1220",
+        "name": "Streamystats Integration",
+        "description": "Jellyfin 12 integration with dashboard setup, per-user visibility, health checks, secure session switching and reverse-proxy guidance.\n",
+        "overview": "Embeds Streamystats as a responsive Jellyfin 12 Web view.",
+        "owner": "NKRACKER",
+        "category": "General",
+        "versions": [
+            {
+                "version": "1.0.0.0",
+                "changelog": "Initial Jellyfin 12 release.\n\n- Guided setup directly in the Jellyfin dashboard.\n- Modern and Legacy Web navigation with responsive embedded Streamystats.\n- Per-user visibility and fail-closed Streamystats session switching.\n- Nginx, Nginx Proxy Manager, Caddy and Traefik guidance.",
+                "targetAbi": "12.0.0.0",
+                "sourceUrl": "https://github.com/NKRACKER/jellyfin-plugin-streamystats-integration/releases/download/v1.0.0.0/streamystats-integration_1.0.0.0.zip",
+                "checksum": "33bb72b7759c0acb14a3075b8e2c19ef",
+                "timestamp": "2026-09-14T17:37:54Z"
+            }
+        ]
+    }
+]
