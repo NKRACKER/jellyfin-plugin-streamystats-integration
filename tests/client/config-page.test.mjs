@@ -19,16 +19,16 @@ test('provides guided setup and all supported proxy choices', () => {
   assert.match(html, /Dashboard → Plugins → Repositories/);
   assert.match(html, /kompilierten Webdateien/);
   assert.match(html, /Streamystats festlegen/);
-  assert.match(html, /Reverse Proxy absichern/);
+  assert.match(html, /Einbetten erlauben \(optional\)/);
   assert.match(html, /Zugriff festlegen/);
   assert.match(html, /Speichern und prüfen/);
-  for (const proxy of ['Nginx', 'Nginx Proxy Manager', 'Caddy', 'Traefik']) assert.match(html, new RegExp(proxy));
+  for (const proxy of ['Nginx', 'Nginx Proxy Manager', 'Cloudflare', 'Caddy', 'Traefik']) assert.match(html, new RegExp(proxy));
 });
 
 test('keeps security and troubleshooting guidance in the plugin UI', () => {
-  assert.match(html, /__jellyfin_integration_reset/);
-  assert.match(html, /X-SSI-Session-Reset/);
+  assert.doesNotMatch(html, /__jellyfin_integration_reset/);
   assert.match(html, /X-Frame-Options: DENY/);
+  assert.match(html, /neuen Tab/);
   assert.match(html, /401\/403/);
   assert.match(html, /keine Jellyfin- oder Streamystats-Zugangsdaten/);
   assert.doesNotMatch(html, /Access-Control-Allow-Origin[ '\"]+\*/);

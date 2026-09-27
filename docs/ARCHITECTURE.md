@@ -10,7 +10,7 @@ flowchart TD
     P[Jellyfin-12-Plugin\nnet10 / ABI 12] -->|injiziert versioniertes Script\nzur Requestzeit| W
     P -->|authentifizierte Config + Health| W
     W -->|Statistiken-View / iframe| R[Stats Reverse Proxy]
-    R -->|XFO entfernen; frame-ancestors\nund Userwechsel-Cookie-Reset| S[Streamystats 2.18.1]
+    R -->|optional: XFO entfernen,\nframe-ancestors setzen| S[Streamystats]
     S -->|eigene HttpOnly-Session| B[Streamystats Backend/PostgreSQL]
     B -->|benutzergebundene Jellyfin API| J[Jellyfin 12 API]
 ```
@@ -18,8 +18,8 @@ flowchart TD
 ### Verantwortlichkeiten
 
 - **Plugin:** Dashboard-Konfiguration, Benutzer-Allowlist, validierte öffentliche Stats-URL, Healthcheck, Clientasset und request-time Injection.
-- **Client:** Menüpunkt, History-Eintrag, responsive Shell, iframe, Laden/Fehler/Retry/Browser-Fallback. Keine Credentials.
-- **Proxy:** TLS, Forwarded-Header, Upgrades, ausschließlich am Stats-vHost XFO entfernen, exakte Frame-Policy setzen und am festen Reset-Pfad Streamystats-Cookies löschen.
+- **Client:** Eintrag im Benutzermenü, Entscheidung iframe vs. neuer Tab, History-Eintrag, responsive Shell, Laden/Fehler/Retry/Browser-Fallback, Schließen bei jeder Jellyfin-Navigation. Keine Credentials.
+- **Proxy (optional):** nur für die Einbettung am Stats-Host XFO entfernen und exakte `frame-ancestors` setzen.
 - **Streamystats:** Login, Session, Autorisierung und Benutzer-/Bibliotheksfilter. Es bleibt die Security Boundary für Statistikdaten.
 
 ## Daten- und Authentifizierungsfluss
@@ -43,10 +43,6 @@ sequenceDiagram
     JP->>RP: GET Stats-URL (nur Header auswerten)
     RP->>SS: Health-Anfrage
     SS-->>JP: Status
-    opt erste Bindung oder anderer Jellyfin-Benutzer
-        JW->>RP: POST /__jellyfin_integration_reset (credentials include)
-        RP-->>JW: Cookies Max-Age=0 + bestätigter CORS-Marker
-    end
     JW->>RP: iframe GET (nur Streamystats-Cookies)
     alt gültige Streamystats-Session
         RP->>SS: Session-Cookies weitergeben
@@ -69,8 +65,8 @@ Das Jellyfin-Token verlässt den Jellyfin-Client nicht in Richtung Plugin oder S
 | `BasePlugin<T>`, `IHasWebPages`, Controller, DI | Jellyfin Plugin-API | mittel/öffentlich | gegen 12.0 NuGet bauen |
 | `IStartupFilter` | ASP.NET Core | stabil, aber kein Jellyfin-Extensionpoint | Index-Middleware-Integrationstest |
 | `/web`, `/web/`, `/web/index.html` | Jellyfin Hostingstruktur | intern | Response enthält genau ein Script |
-| Modern `.MuiAppBar-root`, Navigation-Links | Web-DOM intern | niedrig | Playwright Contract Tests |
-| Legacy `.mainDrawer`, `.navMenuOption` | Web-DOM intern | niedrig | Playwright Contract Tests |
+| Modern `#app-user-menu`, `a[href="#/mypreferencesmenu"]` | Web-DOM intern | niedrig | Playwright Contract Tests |
+| Legacy `.mainDrawer-scrollContainer .userMenuOptions` | Web-DOM intern | niedrig | Playwright Contract Tests |
 | Neutraler `#streamystats-integration`-History-State + eigener Overlay-Root | Browserstandard; bewusst weder Modern-Pfadroute noch Legacy-`#!/…` | hoch | Unit/E2E |
 | Streamystats URL und Cookies | Streamystats öffentliches Verhalten | mittel | Smoke-Test je gepinnter Version |
 | XFO/CSP-Header | Webstandard | hoch | `curl`/Browser-Test |

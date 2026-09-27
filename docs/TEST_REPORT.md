@@ -32,7 +32,8 @@ Ein nicht ausgeführter Runtime-Test wird nicht als bestanden behauptet. Öffent
 | History | öffnen, Back, Forward, Jellyfin-Nav | Overlay korrekt montiert/entfernt |
 | Security | externe Frame-Origin, URLtoken-Suche, Cookies/CSP/CORS/CSRF | nur Jellyfin-Origin framet; keine Secrets; kein Wildcard-CORS |
 | Isolation | zwei getrennte Browserprofile A/B | A sieht niemals B; Library Policy respektiert |
-| Userwechsel | A öffnen, Jellyfin→B, erneut öffnen; Bindung löschen und wiederholen | Reset vor iframe; B sieht Login, nie A-Daten |
+| Modus | Jellyfin per LAN-IP vs. per Domain neben Stats-Host | LAN-IP → neuer Tab; gleiche Domain + Header-Regel → iframe |
+| Player | Video starten, Maus bewegen | kein Plugin-Element über dem Player |
 
 ## Update-Simulation
 

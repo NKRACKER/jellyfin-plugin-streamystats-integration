@@ -30,8 +30,8 @@
           <ol class="ssiHelpList">
             <li>Jellyfin Server und Jellyfin Web müssen zur Hauptversion 12 gehören.</li>
             <li>Streamystats muss bereits funktionieren und per HTTPS erreichbar sein.</li>
-            <li>Empfohlen sind zwei Hosts derselben Site: <code>media.example.com</code> und <code>stats.media.example.com</code>.</li>
-            <li>Der Stats-Reverse-Proxy muss die unten erzeugten Frame- und Session-Reset-Regeln erhalten.</li>
+            <li>Ohne weitere Einrichtung öffnet „Statistiken“ (im Benutzermenü) Streamystats in einem neuen Tab.</li>
+            <li>Optional eingebettet: Jellyfin und Streamystats unter derselben Domain (z. B. <code>media.example.com</code> und <code>stats.example.com</code>) plus eine Header-Regel am Streamystats-Host (Schritt 2).</li>
             <li>Danach Einstellungen speichern, Verbindung prüfen und Jellyfin Web vollständig neu laden.</li>
           </ol>
           <p class="ssiSmall">Native TV-Clients wie Android TV und Swiftfin laden diese Web-Erweiterung nicht. Dort die konfigurierte Browser-URL verwenden.</p>
@@ -77,18 +77,22 @@
           </section>
 
           <section class="ssiSetupCard">
-            <h2>Reverse Proxy absichern</h2>
-            <p>Streamystats blockiert Einbettung standardmäßig. Wähle deinen Proxy und übernimm die erzeugte Konfiguration am <strong>Streamystats-Host</strong>, nicht am Jellyfin-Host.</p>
+            <h2>Einbetten erlauben (optional)</h2>
+            <p>Streamystats verbietet Einbettung standardmäßig (<code>X-Frame-Options: DENY</code>). Solange das so bleibt, öffnet sich Streamystats einfach in einem neuen Tab. Für die eingebettete Ansicht genügt eine Header-Regel am <strong>Streamystats-Host</strong>.</p>
+            <div class="inputContainer">
+              <label class="inputLabel inputLabelUnfocused" for="ssiJellyfinOrigin">Jellyfin-Adresse, in die eingebettet wird</label>
+              <input is="emby-input" id="ssiJellyfinOrigin" type="url" placeholder="https://media.example.com" />
+              <div class="fieldDescription">Nur für die erzeugte Regel, wird nicht gespeichert. Einbetten funktioniert nur, wenn diese Adresse und Streamystats dieselbe Domain und HTTPS nutzen, sonst verwirft der Browser die Streamystats-Anmeldung.</div>
+            </div>
             <div class="selectContainer">
-              <label class="selectLabel" for="ssiProxyType">Reverse Proxy</label>
+              <label class="selectLabel" for="ssiProxyType">Vor Streamystats</label>
               <select is="emby-select" id="ssiProxyType" class="emby-select-withcolor emby-select">
-                <option value="nginx">Nginx</option><option value="npm">Nginx Proxy Manager</option><option value="caddy">Caddy</option><option value="traefik">Traefik</option>
+                <option value="npm">Nginx Proxy Manager / Nginx</option><option value="cloudflare">Cloudflare (Tunnel/Proxy)</option><option value="caddy">Caddy</option><option value="traefik">Traefik</option>
               </select>
             </div>
             <div id="ssiProxyHint" class="ssiWarning"></div>
-            <pre id="ssiProxyCode" class="ssiCode" tabindex="0" aria-label="Reverse-Proxy-Konfiguration"></pre>
-            <div class="ssiInlineActions"><button is="emby-button" type="button" id="ssiCopyProxy" class="raised emby-button"><span>Konfiguration kopieren</span></button></div>
-            <p class="ssiSmall">Kein <code>frame-ancestors *</code> und kein Wildcard-CORS: Nur die exakte Jellyfin-Origin darf einbetten und den parameterlosen Reset per POST aufrufen.</p>
+            <pre id="ssiProxyCode" class="ssiCode" tabindex="0" aria-label="Header-Regel"></pre>
+            <div class="ssiInlineActions"><button is="emby-button" type="button" id="ssiCopyProxy" class="raised emby-button"><span>Regel kopieren</span></button></div>
           </section>
 
           <section class="ssiSetupCard">
@@ -100,7 +104,7 @@
               <div id="ssiAllowedUsers" role="group" aria-label="Ausgewählte Benutzer"></div>
               <div class="fieldDescription">Nur wirksam, wenn „Allen“ ausgeschaltet ist. Die Liste stammt aus Jellyfin 12 <code>GET /Users</code>.</div>
             </div>
-            <div class="ssiWarning">Die Sichtbarkeit ersetzt keine Autorisierung. Streamystats muss seine Anmeldung aktiviert lassen. Beim ersten Öffnen und nach einem Jellyfin-Benutzerwechsel ist eine Streamystats-Anmeldung erforderlich.</div>
+            <div class="ssiWarning">Die Sichtbarkeit ersetzt keine Autorisierung: Streamystats behält seine eigene Anmeldung (30 Tage gültig). Teilen sich mehrere Jellyfin-Benutzer einen Browser, sieht der nächste die Streamystats-Sitzung des vorherigen, bis dieser sich in Streamystats abmeldet.</div>
           </section>
 
           <section class="ssiSetupCard">
@@ -108,17 +112,16 @@
             <button is="emby-button" type="submit" class="raised button-submit block emby-button"><span>Einstellungen speichern</span></button>
             <div class="ssiInlineActions"><button is="emby-button" type="button" id="ssiTestHealth" class="raised emby-button"><span>Gespeicherte Verbindung prüfen</span></button></div>
             <div id="ssiHealthStatus" class="ssiStatus" data-state="busy" role="status">Nach dem Speichern Verbindung prüfen.</div>
-            <p class="ssiSmall">Anschließend Jellyfin Web neu laden. Ein erlaubter Benutzer sieht „Statistiken“, meldet sich dort einmal mit dem eigenen Jellyfin-Konto bei Streamystats an und verwendet danach dessen HttpOnly-Session.</p>
+            <p class="ssiSmall">Anschließend Jellyfin Web neu laden. Erlaubte Benutzer finden „Statistiken“ im Benutzermenü (Avatar oben rechts) und melden sich einmal mit ihrem Jellyfin-Konto bei Streamystats an.</p>
           </section>
         </div>
 
         <details>
           <summary>Fehlerdiagnose</summary>
           <ul class="ssiHelpList">
-            <li><strong>„refused to connect“:</strong> Am Stats-Host ist noch <code>X-Frame-Options: DENY</code> vorhanden oder <code>frame-ancestors</code> nennt nicht diese Jellyfin-Origin.</li>
-            <li><strong>Fehler direkt beim Öffnen:</strong> <code>POST /__jellyfin_integration_reset</code> muss 204, <code>X-SSI-Session-Reset: 1</code> und die exakte CORS-Origin liefern.</li>
-            <li><strong>erneuter Login:</strong> Beim ersten Öffnen, nach Sessionablauf und Benutzerwechsel normal. HTTPS, Cookie-Flags und stabile Streamystats-Secrets prüfen.</li>
-            <li><strong>kein Menüpunkt:</strong> Plugin aktivieren, Benutzer freigeben, speichern, Jellyfin neu starten und Webclient hart neu laden.</li>
+            <li><strong>öffnet immer im neuen Tab:</strong> Am Stats-Host ist noch <code>X-Frame-Options</code> gesetzt, <code>frame-ancestors</code> nennt die aufrufende Jellyfin-Adresse nicht, oder Jellyfin wird über eine andere Domain/IP bzw. per HTTP aufgerufen.</li>
+            <li><strong>Login im eingebetteten Fenster hält nicht:</strong> Jellyfin und Streamystats liegen nicht unter derselben Domain oder nicht beide auf HTTPS.</li>
+            <li><strong>kein Menüpunkt im Benutzermenü:</strong> Plugin aktivieren, Benutzer freigeben, speichern, Jellyfin neu starten und Webclient hart neu laden.</li>
             <li><strong>401/403:</strong> Jellyfin neu anmelden beziehungsweise Allowlist prüfen; niemals Token in die URL eintragen.</li>
             <li><strong>kein Update im Katalog:</strong> Repository-URL direkt öffnen, Katalog aktualisieren und prüfen, ob die Version für <code>targetAbi 12.0.0.0</code> veröffentlicht wurde.</li>
           </ul>
@@ -159,32 +162,29 @@
       function updateUserVisibility() { byId('ssiUsersContainer').style.display = byId('ssiAllUsers').checked ? 'none' : ''; }
 
       function proxyValues() {
-        const jellyfinOrigin = location.origin;
-        let statsHost = 'stats.media.example.com';
+        const jellyfinOrigin = (byId('ssiJellyfinOrigin').value.trim() || location.origin).replace(/\/+$/, '');
+        let statsHost = 'stats.example.com';
         try { statsHost = new URL(byId('ssiPublicUrl').value).host || statsHost; } catch { /* keep placeholder */ }
         return { jellyfinOrigin, statsHost };
       }
 
-      function proxySnippet(type) {
-        const { jellyfinOrigin, statsHost } = proxyValues();
-        const resetHeaders = `add_header Set-Cookie "streamystats-session=; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Lax" always;\n        add_header Set-Cookie "streamystats-token=; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Lax" always;\n        add_header Access-Control-Allow-Origin "${jellyfinOrigin}" always;\n        add_header Access-Control-Allow-Credentials "true" always;\n        add_header Access-Control-Expose-Headers "X-SSI-Session-Reset" always;\n        add_header X-SSI-Session-Reset "1" always;\n        add_header Cache-Control "no-store" always;`;
-        if (type === 'caddy') return `${statsHost} {\n    @approved_reset {\n        path /__jellyfin_integration_reset\n        method POST\n        header Origin ${jellyfinOrigin}\n    }\n    handle @approved_reset {\n        header {\n            +Set-Cookie "streamystats-session=; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Lax"\n            +Set-Cookie "streamystats-token=; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Lax"\n            Access-Control-Allow-Origin "${jellyfinOrigin}"\n            Access-Control-Allow-Credentials "true"\n            Access-Control-Expose-Headers "X-SSI-Session-Reset"\n            X-SSI-Session-Reset "1"\n            Cache-Control "no-store"\n        }\n        respond "" 204\n    }\n    handle /__jellyfin_integration_reset { respond "Forbidden" 403 }\n    handle {\n        reverse_proxy streamystats:3000 {\n            header_down -X-Frame-Options\n            header_down +Content-Security-Policy "frame-ancestors 'self' ${jellyfinOrigin}"\n            header_down X-Content-Type-Options nosniff\n        }\n    }\n}`;
-        if (type === 'traefik') return `# Labels am vorhandenen Streamystats-Service\n- traefik.enable=true\n- traefik.http.routers.streamystats.rule=Host(\`${statsHost}\`)\n- traefik.http.routers.streamystats.middlewares=streamystats-frame@docker\n- traefik.http.middlewares.streamystats-frame.headers.customresponseheaders.X-Frame-Options=\n- traefik.http.middlewares.streamystats-frame.headers.contentsecuritypolicy=frame-ancestors 'self' ${jellyfinOrigin}\n\n# Zusätzlicher Compose-Service; gleiche Traefik-Netzwerke verwenden\nssi-session-reset:\n  image: nginx:1.29-alpine\n  volumes:\n    - ./ssi-session-reset.conf:/etc/nginx/conf.d/default.conf:ro\n  labels:\n    - traefik.enable=true\n    - traefik.http.routers.ssi-reset.rule=Host(\`${statsHost}\`) && Path(\`/__jellyfin_integration_reset\`)\n    - traefik.http.routers.ssi-reset.priority=200\n    - traefik.http.routers.ssi-reset.entrypoints=websecure\n    - traefik.http.routers.ssi-reset.tls=true\n    - traefik.http.services.ssi-reset.loadbalancer.server.port=8080\n\n# Datei ssi-session-reset.conf:\nserver {\n  listen 8080;\n  location = /__jellyfin_integration_reset {\n    if ($request_method != POST) { return 405; }\n    if ($http_origin = "${jellyfinOrigin}") { return 418; }\n    return 403;\n  }\n  error_page 418 = @allowed;\n  location @allowed {\n    internal;\n    ${resetHeaders}\n    return 204;\n  }\n}`;
-        return `# Falls noch nicht vorhanden, im nginx-http-Kontext definieren:\n# map $http_upgrade $connection_upgrade { default upgrade; '' close; }\n\nlocation = /__jellyfin_integration_reset {\n    if ($request_method != POST) { return 405; }\n    if ($http_origin = "${jellyfinOrigin}") { return 418; }\n    return 403;\n}\nerror_page 418 = @ssi_reset_allowed;\nlocation @ssi_reset_allowed {\n    internal;\n    ${resetHeaders}\n    return 204;\n}\n\nlocation / {\n    proxy_pass http://streamystats:3000;\n    proxy_http_version 1.1;\n    proxy_set_header Host $host;\n    proxy_set_header X-Forwarded-Proto $scheme;\n    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\n    proxy_set_header Upgrade $http_upgrade;\n    proxy_set_header Connection $connection_upgrade;\n    proxy_hide_header X-Frame-Options;\n    add_header Content-Security-Policy "frame-ancestors 'self' ${jellyfinOrigin}" always;\n    add_header X-Content-Type-Options nosniff always;\n}`;
-      }
-
       function renderProxyHelp() {
         const type = byId('ssiProxyType').value;
-        const hints = {
-          nginx: 'In den server-Block des Streamystats-vHosts einfügen und den Upstream anpassen.',
-          npm: 'Im Streamystats Proxy Host unter „Advanced“ einfügen. NPM verwaltet proxy_pass, TLS und WebSockets selbst: Im erzeugten Text deshalb den location /-Block weglassen.',
-          caddy: 'Den Hostblock übernehmen und den internen Streamystats-Namen/Port anpassen.',
-          traefik: 'Header-Labels plus mitgelieferten Reset-Sidecar verwenden; Labels allein reichen für einen sicheren Benutzerwechsel nicht.'
+        const { jellyfinOrigin, statsHost } = proxyValues();
+        const csp = `frame-ancestors 'self' ${jellyfinOrigin}`;
+        const variants = {
+          npm: ['Im Streamystats-Proxy-Host unter „Advanced“ (bzw. im server-Block) einfügen.',
+            `proxy_hide_header X-Frame-Options;\nadd_header Content-Security-Policy "${csp}" always;`],
+          cloudflare: ['Cloudflare-Dashboard → Zone → Rules → Transform Rules → Modify Response Header → Regel anlegen.',
+            `Wenn: Hostname equals ${statsHost}\nDann:\n  Remove  X-Frame-Options\n  Set static  Content-Security-Policy = ${csp}`],
+          caddy: ['Im reverse_proxy-Block des Streamystats-Hosts ergänzen.',
+            `reverse_proxy streamystats:3000 {\n    header_down -X-Frame-Options\n    header_down Content-Security-Policy "${csp}"\n}`],
+          traefik: ['Labels am Streamystats-Service ergänzen.',
+            `- traefik.http.routers.streamystats.middlewares=streamystats-frame@docker\n- traefik.http.middlewares.streamystats-frame.headers.customresponseheaders.X-Frame-Options=\n- traefik.http.middlewares.streamystats-frame.headers.contentsecuritypolicy=${csp}`]
         };
-        byId('ssiProxyHint').textContent = hints[type];
-        let snippet = proxySnippet(type === 'npm' ? 'nginx' : type);
-        if (type === 'npm') snippet = snippet.replace(/\nlocation \/ \{[\s\S]*$/, '\n\n# NPM übernimmt den normalen location / Proxy automatisch.\nproxy_hide_header X-Frame-Options;\nadd_header Content-Security-Policy "frame-ancestors \'self\' ' + proxyValues().jellyfinOrigin + '" always;\nadd_header X-Content-Type-Options nosniff always;');
-        byId('ssiProxyCode').textContent = snippet;
+        const [hint, code] = variants[type];
+        byId('ssiProxyHint').textContent = hint;
+        byId('ssiProxyCode').textContent = code;
       }
 
       async function testServerVersion() {
@@ -202,9 +202,15 @@
         try {
           const result = await ApiClient.getJSON(apiUrl('/StreamystatsIntegration/health'));
           const reachable = result.reachable ?? result.Reachable;
-          setStatus(byId('ssiHealthStatus'), reachable ? 'ok' : 'error', reachable
-            ? 'Streamystats ist vom Jellyfin-Server erreichbar. Jetzt Webclient neu laden und den Menüpunkt testen.'
-            : 'Streamystats ist nicht erreichbar. Interne URL, DNS, Container-Netzwerk und Timeout prüfen.');
+          const embeddable = result.embeddable ?? result.Embeddable;
+          const ancestors = result.frameAncestors ?? result.FrameAncestors;
+          if (!reachable) {
+            setStatus(byId('ssiHealthStatus'), 'error', 'Streamystats ist nicht erreichbar. Interne URL, DNS, Container-Netzwerk und Timeout prüfen.');
+          } else {
+            setStatus(byId('ssiHealthStatus'), 'ok', embeddable
+              ? `Streamystats ist erreichbar und erlaubt Einbetten${ancestors ? ` für: ${ancestors}` : ''}. Von dort aus öffnet „Statistiken“ eingebettet, sonst in einem neuen Tab.`
+              : 'Streamystats ist erreichbar. Einbetten ist am Streamystats-Host nicht freigegeben, daher öffnet „Statistiken“ in einem neuen Tab (Schritt 2 ist optional).');
+          }
         } catch (error) {
           console.error('[Streamystats Integration] health test failed', error);
           setStatus(byId('ssiHealthStatus'), 'error', 'Prüfung fehlgeschlagen. Zuerst speichern; anschließend Berechtigung, URL und Jellyfin-Log prüfen.');
@@ -214,6 +220,7 @@
       byId('ssiAllUsers').addEventListener('change', updateUserVisibility);
       byId('ssiProxyType').addEventListener('change', renderProxyHelp);
       byId('ssiPublicUrl').addEventListener('input', renderProxyHelp);
+      byId('ssiJellyfinOrigin').addEventListener('input', renderProxyHelp);
       byId('ssiTestHealth').addEventListener('click', testHealth);
       byId('ssiCopyProxy').addEventListener('click', async () => {
         try { await navigator.clipboard.writeText(byId('ssiProxyCode').textContent); Dashboard.alert('Proxy-Konfiguration wurde kopiert.'); }
@@ -238,6 +245,7 @@
           byId('ssiTimeout').value = c.HealthTimeoutSeconds || 4;
           byId('ssiFallback').checked = c.EnableBrowserFallback;
           byId('ssiAllUsers').checked = c.AllowAllUsers;
+          if (!byId('ssiJellyfinOrigin').value) byId('ssiJellyfinOrigin').value = location.origin;
           await loadUsers(c.AllowedUserIds || []);
           updateUserVisibility(); renderProxyHelp();
         } catch (error) {

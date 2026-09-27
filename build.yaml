@@ -1,21 +1,19 @@
 ---
 name: "Streamystats Integration"
 guid: "5f71ee42-35b3-4a77-a3d5-2cb529ba1220"
-version: "1.0.0.0"
+version: "1.1.0.0"
 targetAbi: "12.0.0.0"
 framework: "net10.0"
 owner: "REPLACE_WITH_GITHUB_OWNER"
 overview: "Embeds Streamystats as a responsive Jellyfin 12 Web view."
 description: >
   Jellyfin 12 integration with dashboard setup, per-user visibility,
-  health checks, secure session switching and reverse-proxy guidance.
+  health checks, automatic embed-or-new-tab mode and a one-rule proxy setup.
 category: "General"
 artifacts:
   - "Jellyfin.Plugin.StreamystatsIntegration.dll"
 changelog: |-
-  Initial Jellyfin 12 release.
-
-  - Guided setup directly in the Jellyfin dashboard.
-  - Modern and Legacy Web navigation with responsive embedded Streamystats.
-  - Per-user visibility and fail-closed Streamystats session switching.
-  - Nginx, Nginx Proxy Manager, Caddy and Traefik guidance.
+  - Menu entry moved into the Jellyfin user menu (no longer in the top bar or over the video player).
+  - The stats view closes on every Jellyfin navigation, including playback start.
+  - Hybrid opening: embedded when Streamystats allows framing and shares the site, otherwise a new tab.
+  - Proxy setup reduced to one header rule (Nginx/NPM, Cloudflare, Caddy, Traefik); session-reset endpoint removed.

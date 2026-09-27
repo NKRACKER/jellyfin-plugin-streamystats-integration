@@ -21,11 +21,15 @@ test('does not contain credential or URL-token transport', () => {
   assert.doesNotMatch(source, /localStorage\.setItem\([^)]*(?:token|password)/i);
 });
 
-test('fails closed through the cross-user session reset contract', () => {
-  assert.match(source, /__jellyfin_integration_reset/);
-  assert.match(source, /X-SSI-Session-Reset/);
-  assert.match(source, /credentials: 'include'/);
-  assert.match(source, /getCurrentUserId/);
+test('lives in the user menu, never in the React app bar', () => {
+  assert.match(source, /app-user-menu/);
+  assert.match(source, /#\/mypreferencesmenu/);
+  assert.doesNotMatch(source, /insertBefore/);
+  assert.doesNotMatch(source, /__jellyfin_integration_reset/);
+});
+
+test('closes the embedded view whenever Jellyfin navigates away', () => {
+  assert.match(source, /if \(document\.getElementById\(ID\) && !routeActive\(\)\) unmount\(\)/);
 });
 
 test('has navigation, responsive viewport, and safe external fallback contracts', () => {
@@ -46,4 +50,26 @@ test('keeps watching across initial login, logout, and user changes', () => {
   assert.ok(listenerSetup >= 0 && listenerSetup < anonymousReturn);
   assert.match(source, /if \(userId\) start\(\)\.catch/);
   assert.match(source, /state\.observer\?\.disconnect\(\)/);
+});
+
+test('embeds only same-site and permitted origins, else opens a new tab', () => {
+  const pick = name => {
+    const start = source.indexOf(`function ${name}(`);
+    let depth = 0, i = source.indexOf('{', start);
+    for (; i < source.length; i++) { if (source[i] === '{') depth++; if (source[i] === '}' && --depth === 0) break; }
+    return source.slice(start, i + 1);
+  };
+  const { sameSite, ancestorsAllow } = new Function(`${pick('isIpHost')}\n${pick('sameSite')}\n${pick('ancestorsAllow')}\nreturn { sameSite, ancestorsAllow };`)();
+  const u = s => new URL(s);
+  assert.equal(sameSite(u('https://jellyfin.natt0nael.online'), u('https://stats.natt0nael.online')), true);
+  assert.equal(sameSite(u('http://192.168.187.164:8096'), u('https://stats.natt0nael.online')), false);
+  assert.equal(sameSite(u('http://jellyfin.example.com'), u('https://stats.example.com')), false);
+  const jf = 'https://jellyfin.natt0nael.online', st = 'https://stats.natt0nael.online';
+  assert.equal(ancestorsAllow(null, jf, st), true);
+  assert.equal(ancestorsAllow(`'self' ${jf}`, jf, st), true);
+  assert.equal(ancestorsAllow("'self' https://*.natt0nael.online", jf, st), true);
+  assert.equal(ancestorsAllow("'self' https://other.example", jf, st), false);
+  assert.equal(ancestorsAllow("'self'", jf, st), false);
+  assert.match(source, /target = '_blank'/);
+  assert.match(source, /rel = 'noopener noreferrer'/);
 });

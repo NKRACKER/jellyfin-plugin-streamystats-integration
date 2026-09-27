@@ -1,5 +1,7 @@
 # Implementierungsplan
 
+> Historisches Dokument (Stand 1.0). Seit 1.1 gibt es keinen Session-Reset-Endpunkt mehr, der Eintrag sitzt im Benutzermenü und Streamystats öffnet ohne Proxy-Regel in einem neuen Tab. Aktuell: [Architektur](ARCHITECTURE.md), [Reverse Proxy](REVERSE_PROXY.md).
+
 ## Repository
 
 ```text

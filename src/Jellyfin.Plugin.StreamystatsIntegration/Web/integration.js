@@ -6,11 +6,10 @@
 
   const ID = 'ssi-root';
   const LINK_CLASS = 'ssi-navigation-link';
-  // Neutral fragment state: Modern owns path-based React Router routes while
-  // Legacy uses #!/ routes. This marker deliberately belongs to neither.
+  // Neutral fragment state: Modern owns #/ React Router routes, Legacy uses #!/ routes.
   const ROUTE = '#streamystats-integration';
   const API_ROOT = '/StreamystatsIntegration';
-  const state = { config: null, observer: null, timer: null, jellyfinUserId: null, userPoll: null, listenersInstalled: false };
+  const state = { config: null, health: null, observer: null, timer: null, jellyfinUserId: null, userPoll: null, listenersInstalled: false };
 
   const css = `
     #${ID}{position:fixed;left:0;right:0;bottom:0;z-index:1000;background:#101010;color:#fff;color-scheme:dark;overflow:hidden;padding-bottom:env(safe-area-inset-bottom);box-sizing:border-box}
@@ -21,10 +20,9 @@
     #${ID} .ssi-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:20px}
     #${ID} button,#${ID} a{min-height:44px;border:0;border-radius:.35rem;padding:0 1.2rem;display:inline-flex;align-items:center;justify-content:center;font:inherit;font-weight:600;text-decoration:none;cursor:pointer}
     #${ID} button{background:var(--primary-accent-color,#00a4dc);color:#fff}#${ID} a{background:rgba(255,255,255,.12);color:#fff}
-    .${LINK_CLASS}{min-width:44px;min-height:44px;background:transparent!important;color:inherit!important;border:0;cursor:pointer;display:inline-flex;align-items:center;gap:.45rem;padding:0 .8rem;font:inherit;text-decoration:none}
-    .${LINK_CLASS} .material-icons{font-size:1.4rem}.mainDrawer .${LINK_CLASS}{width:100%;box-sizing:border-box;justify-content:flex-start}
+    .${LINK_CLASS} .ssi-icon{font-size:1.5rem;line-height:1}
     @keyframes ssi-spin{to{transform:rotate(360deg)}}
-    @media(max-width:600px){.${LINK_CLASS}.ssi-modern span:last-child{display:none}#${ID} .ssi-actions{flex-direction:column}#${ID} .ssi-actions>*{width:100%;box-sizing:border-box}}
+    @media(max-width:600px){#${ID} .ssi-actions{flex-direction:column}#${ID} .ssi-actions>*{width:100%;box-sizing:border-box}}
     @media(prefers-reduced-motion:reduce){.ssi-spinner{animation-duration:1.8s}}
   `;
 
@@ -59,8 +57,62 @@
     return object && (object[camel] !== undefined ? object[camel] : object[pascal]);
   }
 
+  const statsUrl = () => value(state.config, 'streamystatsUrl', 'StreamystatsUrl');
+  const menuName = () => value(state.config, 'menuName', 'MenuName') || 'Statistiken';
+
   function routeActive() {
     return String(location.hash).toLowerCase() === ROUTE;
+  }
+
+  function isIpHost(host) {
+    return /^[\d.]+$/.test(host) || host.includes(':');
+  }
+
+  // Streamystats session cookies are SameSite=Lax: inside a cross-site iframe the login never sticks.
+  // ponytail: last-two-labels heuristic ignores multi-part public suffixes (co.uk); upgrade path is a PSL lookup.
+  function sameSite(a, b) {
+    if (a.protocol !== b.protocol) return false;
+    if (isIpHost(a.hostname) || isIpHost(b.hostname)) return a.hostname === b.hostname;
+    const site = host => host.split('.').slice(-2).join('.');
+    return site(a.hostname) === site(b.hostname);
+  }
+
+  function ancestorsAllow(ancestors, origin, statsOrigin) {
+    if (ancestors == null) return true;
+    const self = new URL(origin);
+    return ancestors.split(/\s+/).filter(Boolean).some(source => {
+      if (source === '*') return true;
+      if (source.toLowerCase() === "'self'") return origin === statsOrigin;
+      if (/^[a-z][a-z0-9+.-]*:$/i.test(source)) return self.protocol === source.toLowerCase();
+      const match = /^(?:([a-z][a-z0-9+.-]*):\/\/)?(\*\.)?([^/:]+)(?::(\d+|\*))?\/?$/i.exec(source);
+      if (!match) return false;
+      const [, scheme, wildcard, host, port] = match;
+      if (scheme && self.protocol !== scheme.toLowerCase() + ':') return false;
+      if (port && port !== '*' && self.port !== port) return false;
+      const target = host.toLowerCase();
+      return wildcard ? self.hostname.endsWith('.' + target) : self.hostname === target;
+    });
+  }
+
+  function canEmbed() {
+    if (!state.health || !value(state.health, 'embeddable', 'Embeddable')) return false;
+    try {
+      const stats = new URL(statsUrl());
+      return sameSite(location, stats)
+        && ancestorsAllow(value(state.health, 'frameAncestors', 'FrameAncestors'), location.origin, stats.origin);
+    } catch {
+      return false;
+    }
+  }
+
+  async function refreshHealth() {
+    try {
+      state.health = await apiGet(API_ROOT + '/health');
+    } catch (error) {
+      state.health = null;
+      log('warn', 'health check failed', error);
+    }
+    document.querySelectorAll('.' + LINK_CLASS).forEach(applyLinkMode);
   }
 
   function headerBottom() {
@@ -77,69 +129,38 @@
     root.style.height = `${Math.max(200, (window.visualViewport?.height || window.innerHeight) - top)}px`;
   }
 
-  function errorMarkup() {
-    const fallback = value(state.config, 'browserFallback', 'BrowserFallback');
-    const url = value(state.config, 'streamystatsUrl', 'StreamystatsUrl');
-    return `<div class="ssi-state"><div class="ssi-card"><span class="material-icons" aria-hidden="true">signal_wifi_off</span><h2>Statistiken sind momentan nicht verfügbar.</h2><p>Verbindung und Reverse-Proxy-Header prüfen.</p><div class="ssi-actions"><button type="button" data-action="retry">Erneut versuchen</button>${fallback ? `<a href="${escapeAttribute(url)}" target="_blank" rel="noopener noreferrer">Im Browser öffnen</a>` : ''}</div></div></div>`;
-  }
-
   function escapeAttribute(input) {
     return String(input || '').replace(/[&<>"']/g, character => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[character]);
   }
 
   function showError(root) {
     window.clearTimeout(state.timer);
-    root.innerHTML = errorMarkup();
+    const fallback = value(state.config, 'browserFallback', 'BrowserFallback');
+    root.innerHTML = `<div class="ssi-state"><div class="ssi-card"><span class="material-icons" aria-hidden="true">signal_wifi_off</span><h2>Statistiken sind momentan nicht verfügbar.</h2><p>Streamystats antwortet nicht oder lässt sich hier nicht einbetten.</p><div class="ssi-actions"><button type="button" data-action="retry">Erneut versuchen</button>${fallback ? `<a href="${escapeAttribute(statsUrl())}" target="_blank" rel="noopener noreferrer">Im Browser öffnen</a>` : ''}</div></div></div>`;
     root.querySelector('[data-action="retry"]')?.addEventListener('click', () => loadFrame(root));
-  }
-
-  async function resetForeignStreamystatsSessionIfNeeded() {
-    const statsUrl = value(state.config, 'streamystatsUrl', 'StreamystatsUrl');
-    const statsOrigin = new URL(statsUrl).origin;
-    const bindingKey = `ssi:jellyfin-user:${statsOrigin}`;
-    const boundUser = localStorage.getItem(bindingKey);
-    if (boundUser === state.jellyfinUserId) return;
-
-    const resetUrl = new URL('/__jellyfin_integration_reset', statsOrigin);
-    const response = await fetch(resetUrl, {
-      method: 'POST',
-      mode: 'cors',
-      credentials: 'include',
-      cache: 'no-store',
-      redirect: 'error'
-    });
-    if (!response.ok || response.headers.get('X-SSI-Session-Reset') !== '1') {
-      throw new Error('The required session-reset proxy endpoint is unavailable.');
-    }
-    localStorage.setItem(bindingKey, state.jellyfinUserId);
   }
 
   async function loadFrame(root) {
     window.clearTimeout(state.timer);
     root.innerHTML = '<div class="ssi-state"><div class="ssi-card"><div class="ssi-spinner" aria-hidden="true"></div><h2>Statistiken werden geladen …</h2></div></div>';
     resizeView();
-    try {
-      const health = await apiGet(API_ROOT + '/health');
-      if (!value(health, 'reachable', 'Reachable')) return showError(root);
-      await resetForeignStreamystatsSessionIfNeeded();
+    await refreshHealth();
+    if (!document.body.contains(root)) return;
+    if (!value(state.health, 'reachable', 'Reachable') || !canEmbed()) return showError(root);
 
-      const iframe = document.createElement('iframe');
-      iframe.className = 'ssi-frame';
-      iframe.title = value(state.config, 'menuName', 'MenuName') || 'Statistiken';
-      iframe.referrerPolicy = 'strict-origin-when-cross-origin';
-      iframe.allow = 'fullscreen; picture-in-picture';
-      iframe.src = value(state.config, 'streamystatsUrl', 'StreamystatsUrl');
-      iframe.addEventListener('load', () => {
-        window.clearTimeout(state.timer);
-        root.querySelector('.ssi-state')?.remove();
-        iframe.style.display = 'block';
-      }, { once: true });
-      root.appendChild(iframe);
-      state.timer = window.setTimeout(() => showError(root), 15000);
-    } catch (error) {
-      log('warn', 'health check failed', error);
-      showError(root);
-    }
+    const iframe = document.createElement('iframe');
+    iframe.className = 'ssi-frame';
+    iframe.title = menuName();
+    iframe.referrerPolicy = 'strict-origin-when-cross-origin';
+    iframe.allow = 'fullscreen';
+    iframe.src = statsUrl();
+    iframe.addEventListener('load', () => {
+      window.clearTimeout(state.timer);
+      root.querySelector('.ssi-state')?.remove();
+      iframe.style.display = 'block';
+    }, { once: true });
+    root.appendChild(iframe);
+    state.timer = window.setTimeout(() => showError(root), 15000);
   }
 
   function mount() {
@@ -147,7 +168,7 @@
     const root = document.createElement('section');
     root.id = ID;
     root.setAttribute('role', 'main');
-    root.setAttribute('aria-label', value(state.config, 'menuName', 'MenuName') || 'Statistiken');
+    root.setAttribute('aria-label', menuName());
     document.body.appendChild(root);
     loadFrame(root);
   }
@@ -162,36 +183,76 @@
     mount();
   }
 
-  function makeLink(modern) {
-    const link = document.createElement('button');
-    link.type = 'button';
-    link.className = `${LINK_CLASS} ${modern ? 'ssi-modern' : 'navMenuOption'}`;
-    link.setAttribute('aria-label', value(state.config, 'menuName', 'MenuName'));
-    link.innerHTML = `<span class="material-icons" aria-hidden="true">query_stats</span><span>${escapeAttribute(value(state.config, 'menuName', 'MenuName'))}</span>`;
-    link.addEventListener('click', event => {
-      event.preventDefault();
-      event.stopPropagation();
-      openView();
-    });
+  function closeUserMenu() {
+    document.querySelector('#app-user-menu > .MuiBackdrop-root')?.click();
+  }
+
+  function applyLinkMode(link) {
+    if (canEmbed()) {
+      link.href = ROUTE;
+      link.removeAttribute('target');
+      link.removeAttribute('rel');
+    } else {
+      link.href = statsUrl();
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+    }
+  }
+
+  function onLinkClick(event) {
+    closeUserMenu();
+    if (!canEmbed()) return;
+    event.preventDefault();
+    event.stopPropagation();
+    openView();
+  }
+
+  function modernMenuItem(template) {
+    const link = template.cloneNode(true);
+    link.classList.add(LINK_CLASS);
+    link.classList.remove('Mui-focusVisible', 'Mui-selected');
+    link.removeAttribute('data-plugin-pages');
+    const icon = link.querySelector('.MuiListItemIcon-root');
+    if (icon) icon.innerHTML = '<span class="material-icons ssi-icon" aria-hidden="true">query_stats</span>';
+    const text = link.querySelector('.MuiListItemText-primary') || link.querySelector('.MuiListItemText-root');
+    if (text) text.textContent = menuName();
+    return link;
+  }
+
+  function legacyMenuItem() {
+    const link = document.createElement('a');
+    link.className = `${LINK_CLASS} navMenuOption lnkMediaFolder`;
+    link.innerHTML = `<span class="material-icons navMenuOptionIcon" aria-hidden="true">query_stats</span><span class="sectionName navMenuOptionText">${escapeAttribute(menuName())}</span>`;
     return link;
   }
 
   function installNavigation() {
-    if (!state.config || document.querySelector('.' + LINK_CLASS)) return;
-    const modern = document.querySelector('.MuiAppBar-root .MuiToolbar-root, .MuiAppBar-root');
-    if (modern) {
-      const controls = modern.querySelector('[class*="button" i]')?.parentElement || modern;
-      controls.insertBefore(makeLink(true), controls.firstChild);
-      return;
+    if (!state.config) return;
+
+    const userMenu = document.getElementById('app-user-menu');
+    const settings = userMenu?.querySelector('a[href="#/mypreferencesmenu"]');
+    if (settings && !userMenu.querySelector('.' + LINK_CLASS)) {
+      const link = modernMenuItem(settings);
+      applyLinkMode(link);
+      link.addEventListener('click', onLinkClick);
+      // Before the first divider: stable order whether other plugins insert after Settings earlier or later.
+      const divider = [...settings.parentElement.children].find(child => child.matches('hr') && (settings.compareDocumentPosition(child) & Node.DOCUMENT_POSITION_FOLLOWING));
+      if (divider) divider.before(link); else settings.after(link);
+      refreshHealth();
     }
-    const legacy = document.querySelector('.mainDrawer .scrollContainer, .mainDrawer');
-    if (legacy) legacy.appendChild(makeLink(false));
+
+    const drawerOptions = document.querySelector('.mainDrawer-scrollContainer .userMenuOptions');
+    if (drawerOptions && !drawerOptions.querySelector('.' + LINK_CLASS)) {
+      const link = legacyMenuItem();
+      applyLinkMode(link);
+      link.addEventListener('click', onLinkClick);
+      drawerOptions.appendChild(link);
+    }
   }
 
-  function onNavigationClick(event) {
-    if (!document.getElementById(ID)) return;
-    const target = event.target instanceof Element ? event.target.closest('a,button') : null;
-    if (target && !target.classList.contains(LINK_CLASS) && target.closest('.MuiAppBar-root,.mainDrawer,.skinHeader')) unmount();
+  function onDomChange() {
+    if (document.getElementById(ID) && !routeActive()) unmount();
+    installNavigation();
   }
 
   async function start() {
@@ -212,7 +273,6 @@
       window.addEventListener('popstate', () => routeActive() ? mount() : unmount());
       window.addEventListener('resize', resizeView, { passive: true });
       window.visualViewport?.addEventListener('resize', resizeView, { passive: true });
-      document.addEventListener('click', onNavigationClick, true);
       state.userPoll = window.setInterval(() => {
         const userId = currentJellyfinUserId();
         if (userId === state.jellyfinUserId) return;
@@ -220,6 +280,7 @@
         document.querySelectorAll('.' + LINK_CLASS).forEach(element => element.remove());
         state.observer?.disconnect();
         state.config = null;
+        state.health = null;
         state.jellyfinUserId = userId;
         if (userId) start().catch(error => log('error', 'user-change initialization failed', error));
       }, 2000);
@@ -231,14 +292,15 @@
     try {
       state.config = await apiGet(API_ROOT + '/config');
       const target = value(state.config, 'jellyfinTarget', 'JellyfinTarget');
-      const url = value(state.config, 'streamystatsUrl', 'StreamystatsUrl');
-      if (target !== '12.0' || !url) throw new Error('unsupported or incomplete configuration');
-    } catch (error) {
+      if (target !== '12.0' || !statsUrl()) throw new Error('unsupported or incomplete configuration');
+    } catch {
+      state.config = null;
       return log('info', 'not enabled for this user or not configured');
     }
 
+    await refreshHealth();
     installNavigation();
-    state.observer = new MutationObserver(installNavigation);
+    state.observer = new MutationObserver(onDomChange);
     state.observer.observe(document.body, { childList: true, subtree: true });
     if (routeActive()) mount();
   }

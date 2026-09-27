@@ -1,5 +1,7 @@
 # Research-Bericht: Streamystats in Jellyfin 12
 
+> Historisches Dokument (Stand 1.0). Seit 1.1 gibt es keinen Session-Reset-Endpunkt mehr, der Eintrag sitzt im Benutzermenü und Streamystats öffnet ohne Proxy-Regel in einem neuen Tab. Aktuell: [Architektur](ARCHITECTURE.md), [Reverse Proxy](REVERSE_PROXY.md).
+
 Stand: 14. September 2026. Referenz ist Jellyfin Server/Web **12.0.0** und Streamystats **2.18.1**. Aussagen, die nicht durch eine öffentliche API oder einen Test belegt sind, sind ausdrücklich als intern, experimentell oder ungetestet markiert.
 
 ## Executive Summary

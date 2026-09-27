@@ -14,22 +14,18 @@ Geschützt werden Jellyfin-Tokens, Streamystats-Sessions, Statistiken anderer Be
 6. Proxy: `X-Frame-Options` nur am Stats-vHost entfernen; `frame-ancestors` exakt auf Jellyfin-Origin begrenzen. Kein Wildcard-CORS.
 7. HTTPS, `Secure`, `HttpOnly` und Streamystats’ `SameSite=Lax` bleiben erhalten. Die Hosts müssen dieselbe registrierbare Domain besitzen.
 8. Kein selbst gebautes SSO, solange Streamystats keinen stabilen Token-Exchange anbietet.
-9. Das iframe lädt bei Erstbindung/Userwechsel erst nach erfolgreichem Reset beider bekannten Streamystats-Auth-Cookies. Der Reset-Endpunkt akzeptiert keine Parameter, gibt keine Daten zurück und erlaubt CORS nur der exakten Jellyfin-Origin.
+9. Eingebettet wird nur, wenn der serverseitige Header-Check und der clientseitige Same-Site-Check beide bestehen; sonst neuer Tab mit `noopener noreferrer`.
 
 ## Benutzer A gegen Benutzer B
 
-Der Integrationsteil übermittelt keinerlei Zielbenutzer-ID an Streamystats. Der eingeloggte Streamystats-Benutzer ergibt sich ausschließlich aus dessen HttpOnly-Session, die Streamystats nach eigener Jellyfin-Authentifizierung erstellt. Eine lokale, nicht geheime Bindung `Stats-Origin → Jellyfin-User-ID` löst bei fehlender/geänderter ID einen Cookie-Reset auf der Stats-Origin aus. Ohne Status 2xx und `X-SSI-Session-Reset: 1` wird nichts eingebettet. Testpflicht:
+Der Integrationsteil übermittelt keinerlei Zielbenutzer-ID an Streamystats. Der eingeloggte Streamystats-Benutzer ergibt sich ausschließlich aus dessen HttpOnly-Session, die Streamystats nach eigener Jellyfin-Authentifizierung erstellt.
 
-- getrennte Browserkontexte für A und B;
-- `/Users/Me` in Streamystats muss zur erwarteten Jellyfin-ID gehören;
-- A darf keine B-Historie, Watchlist oder nicht freigegebene Bibliothek sehen;
-- Logout/Userwechsel in Jellyfin entfernt die View, lädt Zugriff neu und löscht vor dem nächsten Öffnen die frühere Streamystats-Session;
-- geleerter Jellyfin-LocalStorage bei fortbestehenden Stats-Cookies führt ebenfalls zum Reset (fehlende Bindung ist Reset, nicht Vertrauen).
+**Bekannte, bewusst akzeptierte Grenze (seit 1.1):** Teilen sich zwei Jellyfin-Benutzer denselben Browser, sieht B die Streamystats-Sitzung von A, bis A sich in Streamystats abmeldet oder die Sitzung (30 Tage) abläuft. Das entspricht dem Verhalten beim direkten Aufruf von Streamystats. Der frühere Cookie-Reset-Endpunkt am Proxy wurde entfernt, weil er die Einrichtung deutlich verkomplizierte und ohne ihn nie funktionierte. Streamystats bleibt die Autorisierungsgrenze: A sieht darüber nur, was As Streamystats-Konto sehen darf.
 
 ## CSRF, CORS und CSP
 
 - Plugin-GET-Endpunkte sind read-only und benötigen Jellyfin-Authentifizierung. Konfiguration wird über die normale Jellyfin-Dashboard-Pluginseite gespeichert.
-- Der einzige Cross-Origin-Fetch geht credentialed an den parameterlosen Reset-Pfad. Nur dort gelten exakter `Access-Control-Allow-Origin`, Credentials und ein exponierter Bestätigungsheader. Die übrige Stats-App erhält kein CORS.
+- Der Client macht keine Cross-Origin-Fetches; Streamystats erhält kein CORS.
 - `frame-src` muss in Jellyfins eigener CSP nur ergänzt werden, falls eine vorgeschaltete globale CSP Frames standardmäßig blockiert. Jellyfin selbst darf nicht pauschal gelockert werden.
 - Streamystats’ Antwort erhält `frame-ancestors 'self' https://media.example.com`. Existierende CSP muss ersetzt oder korrekt zusammengeführt werden; zwei widersprüchliche CSP-Header werden gemeinsam restriktiv ausgewertet.
 
@@ -43,6 +39,6 @@ Der Integrationsteil übermittelt keinerlei Zielbenutzer-ID an Streamystats. Der
 - [ ] A/B-Isolation mit zwei echten Nicht-Admin-Konten bestanden.
 - [ ] Nicht erlaubter Benutzer erhält 403 und keinen Menüpunkt.
 - [ ] Externe Origin kann Streamystats nicht framen.
-- [ ] Erstöffnung/Userwechsel ruft Reset auf; ohne Marker bleibt die View im Fehlerzustand.
+- [ ] LAN-IP/HTTP-Aufruf öffnet neuen Tab statt iframe.
 - [ ] Sessionablauf zeigt Login statt fremder Daten.
 - [ ] URL-Validierung blockiert `javascript:`, `data:`, Userinfo und unsicheres HTTP.

@@ -1,8 +1,12 @@
 # Troubleshooting
 
-## „Streamystats refused to connect“ / X-Frame-Options
+## „Statistiken“ öffnet immer einen neuen Tab
 
-`curl -I` auf die Stats-URL. `X-Frame-Options: DENY` muss am Stats-Proxy fehlen. Die CSP muss `frame-ancestors 'self' https://<jellyfin-host>` enthalten. Regeln nicht am falschen vHost einfügen.
+Gewollt, solange nicht beides gilt: (1) Streamystats erlaubt Einbetten (Dashboard → Plugin → „Gespeicherte Verbindung prüfen“ meldet das) und (2) Jellyfin wird über dieselbe Domain und dasselbe Schema aufgerufen wie Streamystats. Per LAN-IP oder HTTP ist immer der neue Tab aktiv.
+
+## „Streamystats refused to connect“ im eingebetteten Fenster
+
+`curl -I` auf die Stats-URL. `X-Frame-Options` muss fehlen, die CSP muss `frame-ancestors 'self' https://<jellyfin-host>` enthalten. Das Plugin prüft die Header höchstens alle 30 Sekunden neu.
 
 ## iframe bleibt weiß
 
@@ -12,10 +16,6 @@ Browser-DevTools → Console/Network öffnen. Häufig: widersprüchliche zweite 
 
 Das ist bei erster/abgelaufener Session und nach einem Jellyfin-Benutzerwechsel erwartbar. Jellyfin und Stats müssen dieselbe Site (`media.example.com` / `stats.media.example.com`) und HTTPS nutzen. Private-/Inkognito-Modus oder WKWebView kann Cookies strenger behandeln. Kein SameSite-Hack und keine Auth-Deaktivierung verwenden.
 
-## Fehler direkt nach „Statistiken“ / Session-Reset fehlt
-
-In Network nach `__jellyfin_integration_reset` suchen. Erwartet sind 204, `X-SSI-Session-Reset: 1`, exaktes `Access-Control-Allow-Origin` und Credentials. Bei CORS-Fehler die Jellyfin-Origin inklusive Scheme/Port in der Proxyvorlage korrigieren. Ein Wildcard-Origin ist mit Credentials verboten und wird nicht verwendet.
-
 ## Cookies funktionieren nicht
 
 In DevTools Application/Storage prüfen, ob `streamystats-session`/Token-Cookies für die Stats-Origin existieren und `Secure`, `HttpOnly`, passenden Path und SameSite besitzen. Uhrzeit, HTTPS und stabile `SESSION_SECRET`/`NEXT_SERVER_ACTIONS_ENCRYPTION_KEY` prüfen.
@@ -24,7 +24,7 @@ In DevTools Application/Storage prüfen, ob `streamystats-session`/Token-Cookies
 
 Die Fehlermeldung nennt die blockierende Direktive. `frame-ancestors` gehört in die **Streamystats-Antwort**; `frame-src` ggf. in eine eigene globale CSP der **Jellyfin-Antwort**. Keine Wildcards. Mehrere CSP-Header werden gemeinsam restriktiv angewandt.
 
-## Menüpunkt erscheint nicht
+## „Statistiken“ fehlt im Benutzermenü
 
 1. Jellyfin exakt 12.0.x und Webclient passend?
 2. Plugin nach Installation neu gestartet?

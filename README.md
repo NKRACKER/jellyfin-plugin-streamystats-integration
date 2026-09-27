@@ -9,16 +9,17 @@ Eine Jellyfin-12-spezifische Integration, die Streamystats als responsive Ansich
 - ausschließlich Jellyfin 12: `.NET 10`, `Jellyfin.Controller/Model 12.0.0`, ABI `12.0.0.0`;
 - Dashboard-Konfiguration ohne hardcodierte URL oder Credentials;
 - geführte Einrichtung direkt im Plugin mit Jellyfin-12-Versionscheck, Proxy-Generator, Health-Test und Fehlerhilfe;
-- Menüpunkt für Modern und Legacy, Browser-History/Back;
+- Eintrag „Statistiken“ im Benutzermenü (Avatar oben rechts), bei Legacy im Seitenmenü; Browser-History/Back;
+- öffnet eingebettet, wenn Streamystats das erlaubt und dieselbe Domain nutzt, sonst automatisch in einem neuen Tab;
 - rahmenlose responsive View mit Loading, Healthcheck, Fehler, Retry und Browser-Fallback;
 - Sichtbarkeit für alle oder ausgewählte Jellyfin-Benutzer;
 - keine Änderungen an kompilierten Jellyfin-Web-Dateien;
-- Nginx, Nginx Proxy Manager, Caddy und Traefik Beispiele;
+- ohne Proxy-Anpassung nutzbar; für die Einbettung genügt eine Header-Regel (Nginx/NPM, Cloudflare, Caddy, Traefik);
 - keine Admin-Tokens, Passwörter oder URL-Tokens.
 
 ## Wichtige Grenze: SSO
 
-Streamystats 2.18.1 bietet keinen hier belegten stabilen Token-Exchange, der eine Jellyfin-Websession in eine Streamystats-Session umwandelt. Darum verlangt diese Version beim ersten Mal den normalen Streamystats-Login im iframe und verwendet anschließend dessen 30-Tage-HttpOnly-Session. Bei einem Jellyfin-Benutzerwechsel löscht ein eng begrenzter Proxy-Endpunkt zuerst die alten Streamystats-Cookies; erst danach wird die View geladen. Das verhindert, dass B eine fortbestehende A-Session sieht. Siehe [Security](docs/SECURITY.md).
+Streamystats bietet keinen stabilen Token-Exchange, der eine Jellyfin-Websession in eine Streamystats-Session umwandelt. Beim ersten Öffnen ist deshalb der normale Streamystats-Login nötig (danach 30 Tage gültig). Teilen sich mehrere Jellyfin-Benutzer einen Browser, sieht der nächste die Streamystats-Sitzung des vorherigen, bis dieser sich dort abmeldet. Siehe [Security](docs/SECURITY.md).
 
 ## Schnellstart
 
