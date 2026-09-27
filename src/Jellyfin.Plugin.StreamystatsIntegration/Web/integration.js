@@ -20,7 +20,8 @@
     #${ID} .ssi-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:20px}
     #${ID} button,#${ID} a{min-height:44px;border:0;border-radius:.35rem;padding:0 1.2rem;display:inline-flex;align-items:center;justify-content:center;font:inherit;font-weight:600;text-decoration:none;cursor:pointer}
     #${ID} button{background:var(--primary-accent-color,#00a4dc);color:#fff}#${ID} a{background:rgba(255,255,255,.12);color:#fff}
-    .${LINK_CLASS} .ssi-icon{font-size:1.5rem;line-height:1}
+    .MuiToolbar-root .${LINK_CLASS}{display:inline-flex;align-items:center;justify-content:center;color:inherit!important;text-decoration:none}
+    .${LINK_CLASS} .ssi-icon{font-size:24px;line-height:1}
     @keyframes ssi-spin{to{transform:rotate(360deg)}}
     @media(max-width:600px){#${ID} .ssi-actions{flex-direction:column}#${ID} .ssi-actions>*{width:100%;box-sizing:border-box}}
     @media(prefers-reduced-motion:reduce){.ssi-spinner{animation-duration:1.8s}}
@@ -183,10 +184,6 @@
     mount();
   }
 
-  function closeUserMenu() {
-    document.querySelector('#app-user-menu > .MuiBackdrop-root')?.click();
-  }
-
   function applyLinkMode(link) {
     if (canEmbed()) {
       link.href = ROUTE;
@@ -200,22 +197,30 @@
   }
 
   function onLinkClick(event) {
-    closeUserMenu();
     if (!canEmbed()) return;
     event.preventDefault();
     event.stopPropagation();
     openView();
   }
 
-  function modernMenuItem(template) {
-    const link = template.cloneNode(true);
-    link.classList.add(LINK_CLASS);
-    link.classList.remove('Mui-focusVisible', 'Mui-selected');
-    link.removeAttribute('data-plugin-pages');
-    const icon = link.querySelector('.MuiListItemIcon-root');
-    if (icon) icon.innerHTML = '<span class="material-icons ssi-icon" aria-hidden="true">query_stats</span>';
-    const text = link.querySelector('.MuiListItemText-primary') || link.querySelector('.MuiListItemText-root');
-    if (text) text.textContent = menuName();
+  // Same anchor as Jellyfin Enhanced: the icon box left of the user-menu button. Pages without a
+  // user menu (video player, public pages) have no tray, so no button appears there.
+  function headerTray() {
+    const userButton = document.querySelector('.MuiAppBar-root [aria-controls="app-user-menu"]');
+    const toolbar = userButton?.closest('.MuiToolbar-root');
+    let box = userButton;
+    while (box && box.parentElement !== toolbar) box = box.parentElement;
+    return box?.previousElementSibling || null;
+  }
+
+  function headerButton(template) {
+    const link = document.createElement('a');
+    // Only MUI's own styling classes: sibling buttons may carry other plugins' hook classes.
+    const styling = [...template.classList].filter(name => /^(Mui(?!-)|css-)/.test(name));
+    link.className = [...styling, LINK_CLASS].join(' ');
+    link.title = menuName();
+    link.setAttribute('aria-label', menuName());
+    link.innerHTML = '<span class="material-icons ssi-icon" aria-hidden="true">query_stats</span>';
     return link;
   }
 
@@ -229,18 +234,19 @@
   function installNavigation() {
     if (!state.config) return;
 
-    const userMenu = document.getElementById('app-user-menu');
-    const settings = userMenu?.querySelector('a[href="#/mypreferencesmenu"]');
-    if (settings && !userMenu.querySelector('.' + LINK_CLASS)) {
-      const link = modernMenuItem(settings);
+    const tray = headerTray();
+    // Jellyfin's own search link is a native MUI anchor; other plugins' buttons only imitate MUI.
+    const template = tray?.querySelector('a.MuiIconButton-root[href*="search"]')
+      || tray?.querySelector('.MuiIconButton-root:not(.' + LINK_CLASS + ')');
+    if (template && !tray.querySelector('.' + LINK_CLASS)) {
+      const link = headerButton(template);
       applyLinkMode(link);
       link.addEventListener('click', onLinkClick);
-      // Before the first divider: stable order whether other plugins insert after Settings earlier or later.
-      const divider = [...settings.parentElement.children].find(child => child.matches('hr') && (settings.compareDocumentPosition(child) & Node.DOCUMENT_POSITION_FOLLOWING));
-      if (divider) divider.before(link); else settings.after(link);
-      refreshHealth();
+      tray.prepend(link);
     }
 
+    // Jellyfin 12 keeps the legacy drawer hidden in the DOM under the modern layout; only use it without one.
+    if (document.querySelector('.MuiAppBar-root')) return;
     const drawerOptions = document.querySelector('.mainDrawer-scrollContainer .userMenuOptions');
     if (drawerOptions && !drawerOptions.querySelector('.' + LINK_CLASS)) {
       const link = legacyMenuItem();

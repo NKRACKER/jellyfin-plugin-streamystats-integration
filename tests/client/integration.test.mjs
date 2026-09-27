@@ -21,10 +21,12 @@ test('does not contain credential or URL-token transport', () => {
   assert.doesNotMatch(source, /localStorage\.setItem\([^)]*(?:token|password)/i);
 });
 
-test('lives in the user menu, never in the React app bar', () => {
-  assert.match(source, /app-user-menu/);
-  assert.match(source, /#\/mypreferencesmenu/);
+test('sits in the right header icon tray and never falls back onto the app bar', () => {
+  assert.match(source, /\[aria-controls="app-user-menu"\]/);
+  assert.match(source, /previousElementSibling/);
+  assert.match(source, /tray\.prepend\(link\)/);
   assert.doesNotMatch(source, /insertBefore/);
+  assert.doesNotMatch(source, /MuiAppBar-root'\)\s*;?\s*$/m);
   assert.doesNotMatch(source, /__jellyfin_integration_reset/);
 });
 

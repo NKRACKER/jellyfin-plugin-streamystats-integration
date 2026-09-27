@@ -81,7 +81,7 @@ Die Pluginseite enthält die vollständige Einrichtungshilfe:
 3. Optional für die eingebettete Ansicht: Proxy-Typ wählen (Nginx/NPM, Cloudflare, Caddy, Traefik) und die erzeugte Header-Regel am Streamystats-Host anwenden. Ohne diesen Schritt öffnet Streamystats in einem neuen Tab.
 4. Zugriff für alle oder ausgewählte Jellyfin-Benutzer festlegen.
 5. Speichern und „Gespeicherte Verbindung prüfen“ anklicken. Das Ergebnis nennt auch, ob Einbetten erlaubt ist.
-6. Jellyfin Web hart neu laden und „Statistiken“ im Benutzermenü (Avatar oben rechts) öffnen.
+6. Jellyfin Web hart neu laden und das Statistik-Symbol oben rechts in der Kopfleiste öffnen.
 7. Beim ersten Öffnen einmal mit dem eigenen Jellyfin-Benutzer in Streamystats anmelden.
 
 Der Health-Test bestätigt die Erreichbarkeit vom Jellyfin-Server. Die Frame-Header anschließend zusätzlich mit `tests/security/proxy_headers.sh` oder Browser-DevTools prüfen.

@@ -9,7 +9,7 @@ Eine Jellyfin-12-spezifische Integration, die Streamystats als responsive Ansich
 - ausschließlich Jellyfin 12: `.NET 10`, `Jellyfin.Controller/Model 12.0.0`, ABI `12.0.0.0`;
 - Dashboard-Konfiguration ohne hardcodierte URL oder Credentials;
 - geführte Einrichtung direkt im Plugin mit Jellyfin-12-Versionscheck, Proxy-Generator, Health-Test und Fehlerhilfe;
-- Eintrag „Statistiken“ im Benutzermenü (Avatar oben rechts), bei Legacy im Seitenmenü; Browser-History/Back;
+- Statistik-Symbol oben rechts in der Kopfleiste (wie der Würfel von Jellyfin Enhanced), nicht im Videoplayer; bei Legacy im Seitenmenü; Browser-History/Back;
 - öffnet eingebettet, wenn Streamystats das erlaubt und dieselbe Domain nutzt, sonst automatisch in einem neuen Tab;
 - rahmenlose responsive View mit Loading, Healthcheck, Fehler, Retry und Browser-Fallback;
 - Sichtbarkeit für alle oder ausgewählte Jellyfin-Benutzer;

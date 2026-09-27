@@ -18,7 +18,7 @@ flowchart TD
 ### Verantwortlichkeiten
 
 - **Plugin:** Dashboard-Konfiguration, Benutzer-Allowlist, validierte öffentliche Stats-URL, Healthcheck, Clientasset und request-time Injection.
-- **Client:** Eintrag im Benutzermenü, Entscheidung iframe vs. neuer Tab, History-Eintrag, responsive Shell, Laden/Fehler/Retry/Browser-Fallback, Schließen bei jeder Jellyfin-Navigation. Keine Credentials.
+- **Client:** Symbol in der rechten Kopfleisten-Leiste, Entscheidung iframe vs. neuer Tab, History-Eintrag, responsive Shell, Laden/Fehler/Retry/Browser-Fallback, Schließen bei jeder Jellyfin-Navigation. Keine Credentials.
 - **Proxy (optional):** nur für die Einbettung am Stats-Host XFO entfernen und exakte `frame-ancestors` setzen.
 - **Streamystats:** Login, Session, Autorisierung und Benutzer-/Bibliotheksfilter. Es bleibt die Security Boundary für Statistikdaten.
 
@@ -65,7 +65,7 @@ Das Jellyfin-Token verlässt den Jellyfin-Client nicht in Richtung Plugin oder S
 | `BasePlugin<T>`, `IHasWebPages`, Controller, DI | Jellyfin Plugin-API | mittel/öffentlich | gegen 12.0 NuGet bauen |
 | `IStartupFilter` | ASP.NET Core | stabil, aber kein Jellyfin-Extensionpoint | Index-Middleware-Integrationstest |
 | `/web`, `/web/`, `/web/index.html` | Jellyfin Hostingstruktur | intern | Response enthält genau ein Script |
-| Modern `#app-user-menu`, `a[href="#/mypreferencesmenu"]` | Web-DOM intern | niedrig | Playwright Contract Tests |
+| Modern: Icon-Box links von `[aria-controls="app-user-menu"]` | Web-DOM intern | niedrig | Playwright Contract Tests |
 | Legacy `.mainDrawer-scrollContainer .userMenuOptions` | Web-DOM intern | niedrig | Playwright Contract Tests |
 | Neutraler `#streamystats-integration`-History-State + eigener Overlay-Root | Browserstandard; bewusst weder Modern-Pfadroute noch Legacy-`#!/…` | hoch | Unit/E2E |
 | Streamystats URL und Cookies | Streamystats öffentliches Verhalten | mittel | Smoke-Test je gepinnter Version |

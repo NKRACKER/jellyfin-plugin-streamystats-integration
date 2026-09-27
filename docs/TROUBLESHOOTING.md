@@ -1,6 +1,6 @@
 # Troubleshooting
 
-## „Statistiken“ öffnet immer einen neuen Tab
+## Das Statistik-Symbol öffnet immer einen neuen Tab
 
 Gewollt, solange nicht beides gilt: (1) Streamystats erlaubt Einbetten (Dashboard → Plugin → „Gespeicherte Verbindung prüfen“ meldet das) und (2) Jellyfin wird über dieselbe Domain und dasselbe Schema aufgerufen wie Streamystats. Per LAN-IP oder HTTP ist immer der neue Tab aktiv.
 
@@ -24,7 +24,7 @@ In DevTools Application/Storage prüfen, ob `streamystats-session`/Token-Cookies
 
 Die Fehlermeldung nennt die blockierende Direktive. `frame-ancestors` gehört in die **Streamystats-Antwort**; `frame-src` ggf. in eine eigene globale CSP der **Jellyfin-Antwort**. Keine Wildcards. Mehrere CSP-Header werden gemeinsam restriktiv angewandt.
 
-## „Statistiken“ fehlt im Benutzermenü
+## Statistik-Symbol fehlt oben rechts
 
 1. Jellyfin exakt 12.0.x und Webclient passend?
 2. Plugin nach Installation neu gestartet?

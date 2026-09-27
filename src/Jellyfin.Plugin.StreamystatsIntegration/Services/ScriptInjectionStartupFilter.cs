@@ -77,7 +77,10 @@ public sealed class ScriptInjectionStartupFilter : IStartupFilter
                 var close = html.LastIndexOf("</body>", StringComparison.OrdinalIgnoreCase);
                 if (close >= 0)
                 {
-                    var version = typeof(Plugin).Assembly.GetName().Version?.ToString() ?? "1";
+                    // Build id in the URL: CDNs such as Cloudflare cache client.js for hours, so a rebuilt
+                    // script under an unchanged plugin version would otherwise stay stale.
+                    var assembly = typeof(Plugin).Assembly;
+                    var version = $"{assembly.GetName().Version}-{assembly.ManifestModule.ModuleVersionId:N}"[..24];
                     var tag = $"<script src=\"../StreamystatsIntegration/client.js?v={version}\" defer></script>";
                     html = html.Insert(close, tag + Environment.NewLine);
                     if (Interlocked.Exchange(ref _logged, 1) == 0)

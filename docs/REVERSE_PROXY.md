@@ -9,7 +9,7 @@ Ersetze diese Hosts in **jeder** Konfigurationsdatei. Beide müssen per HTTPS er
 
 ## Ohne Proxy-Regel
 
-Ohne jede Anpassung funktioniert das Plugin bereits: „Statistiken“ im Benutzermenü öffnet Streamystats in einem neuen Tab. Die Regel unten ist nur für die **eingebettete** Ansicht nötig.
+Ohne jede Anpassung funktioniert das Plugin bereits: das Statistik-Symbol oben rechts öffnet Streamystats in einem neuen Tab. Die Regel unten ist nur für die **eingebettete** Ansicht nötig.
 
 ## Header-Regel für die eingebettete Ansicht
 

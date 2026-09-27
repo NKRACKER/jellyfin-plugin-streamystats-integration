@@ -8,7 +8,7 @@
 4. Modern und Legacy Contract-Smokes durchführen.
 5. 401/403, Benutzerwechsel, Back/Forward und Injection-Einmaligkeit testen.
 
-Wahrscheinliche Bruchstellen: Web-Shell-Pfad, Benutzermenü-/Drawer-DOM, `window.ApiClient`. Stabile Teile: ASP.NET-Header, iframe, History, Plugincontroller. Bei nicht erkanntem Layout darf der Menüpunkt fehlen, Jellyfin selbst aber nicht brechen.
+Wahrscheinliche Bruchstellen: Web-Shell-Pfad, Kopfleisten-/Drawer-DOM, `window.ApiClient`. Stabile Teile: ASP.NET-Header, iframe, History, Plugincontroller. Bei nicht erkanntem Layout darf der Menüpunkt fehlen, Jellyfin selbst aber nicht brechen.
 
 ## Jellyfin Web
 

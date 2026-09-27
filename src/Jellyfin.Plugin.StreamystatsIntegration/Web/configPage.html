@@ -30,7 +30,7 @@
           <ol class="ssiHelpList">
             <li>Jellyfin Server und Jellyfin Web müssen zur Hauptversion 12 gehören.</li>
             <li>Streamystats muss bereits funktionieren und per HTTPS erreichbar sein.</li>
-            <li>Ohne weitere Einrichtung öffnet „Statistiken“ (im Benutzermenü) Streamystats in einem neuen Tab.</li>
+            <li>Ohne weitere Einrichtung öffnet das Statistik-Symbol oben rechts in der Kopfleiste Streamystats in einem neuen Tab.</li>
             <li>Optional eingebettet: Jellyfin und Streamystats unter derselben Domain (z. B. <code>media.example.com</code> und <code>stats.example.com</code>) plus eine Header-Regel am Streamystats-Host (Schritt 2).</li>
             <li>Danach Einstellungen speichern, Verbindung prüfen und Jellyfin Web vollständig neu laden.</li>
           </ol>
@@ -112,7 +112,7 @@
             <button is="emby-button" type="submit" class="raised button-submit block emby-button"><span>Einstellungen speichern</span></button>
             <div class="ssiInlineActions"><button is="emby-button" type="button" id="ssiTestHealth" class="raised emby-button"><span>Gespeicherte Verbindung prüfen</span></button></div>
             <div id="ssiHealthStatus" class="ssiStatus" data-state="busy" role="status">Nach dem Speichern Verbindung prüfen.</div>
-            <p class="ssiSmall">Anschließend Jellyfin Web neu laden. Erlaubte Benutzer finden „Statistiken“ im Benutzermenü (Avatar oben rechts) und melden sich einmal mit ihrem Jellyfin-Konto bei Streamystats an.</p>
+            <p class="ssiSmall">Anschließend Jellyfin Web neu laden. Erlaubte Benutzer finden das Statistik-Symbol oben rechts in der Kopfleiste (links neben den anderen Symbolen) und melden sich einmal mit ihrem Jellyfin-Konto bei Streamystats an.</p>
           </section>
         </div>
 
@@ -121,7 +121,7 @@
           <ul class="ssiHelpList">
             <li><strong>öffnet immer im neuen Tab:</strong> Am Stats-Host ist noch <code>X-Frame-Options</code> gesetzt, <code>frame-ancestors</code> nennt die aufrufende Jellyfin-Adresse nicht, oder Jellyfin wird über eine andere Domain/IP bzw. per HTTP aufgerufen.</li>
             <li><strong>Login im eingebetteten Fenster hält nicht:</strong> Jellyfin und Streamystats liegen nicht unter derselben Domain oder nicht beide auf HTTPS.</li>
-            <li><strong>kein Menüpunkt im Benutzermenü:</strong> Plugin aktivieren, Benutzer freigeben, speichern, Jellyfin neu starten und Webclient hart neu laden.</li>
+            <li><strong>kein Statistik-Symbol oben rechts:</strong> Plugin aktivieren, Benutzer freigeben, speichern, Jellyfin neu starten und Webclient hart neu laden.</li>
             <li><strong>401/403:</strong> Jellyfin neu anmelden beziehungsweise Allowlist prüfen; niemals Token in die URL eintragen.</li>
             <li><strong>kein Update im Katalog:</strong> Repository-URL direkt öffnen, Katalog aktualisieren und prüfen, ob die Version für <code>targetAbi 12.0.0.0</code> veröffentlicht wurde.</li>
           </ul>

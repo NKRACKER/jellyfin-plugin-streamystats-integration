@@ -15,7 +15,7 @@ Die Jellyfin-Pakete sind exakt auf 12.0.0 gepinnt und mit `ExcludeAssets=runtime
 
 Alle nicht öffentlichen Jellyfin-Web-Kopplungen liegen in `Web/integration.js`:
 
-- Modern: Benutzermenü `#app-user-menu`, Anker `a[href="#/mypreferencesmenu"]`;
+- Modern: Icon-Box links neben dem Avatar-Button `[aria-controls="app-user-menu"]` (gleicher Anker wie Jellyfin Enhanced); ohne Avatar-Button (Player) kein Symbol;
 - Legacy: `.mainDrawer`, `.scrollContainer`, `.navMenuOption`;
 - Headerhöhe: `.MuiAppBar-root`, `.skinHeader:not(.hide)`;
 - Jellyfin globaler `window.ApiClient`.
